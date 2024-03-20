@@ -541,6 +541,7 @@ def get_secret_args(compose, cnt, secret):
     uid = None if is_str(secret) else secret.get("uid", None)
     gid = None if is_str(secret) else secret.get("gid", None)
     mode = None if is_str(secret) else secret.get("mode", None)
+    secret_type = None if is_str(secret) else secret.get("type", None)
 
     if source_file:
         if not target:
@@ -573,6 +574,8 @@ def get_secret_args(compose, cnt, secret):
         secret_opts += f",uid={uid}" if uid else ""
         secret_opts += f",gid={gid}" if gid else ""
         secret_opts += f",mode={mode}" if mode else ""
+        secret_opts += f",type={secret_type}" if secret_type else ""
+        secret_opts += f",target={target}" if secret_type == "env" and target else ""
         # The target option is only valid for type=env,
         # which in an ideal world would work
         # for type=mount as well.
@@ -585,12 +588,12 @@ def get_secret_args(compose, cnt, secret):
         )
         if ext_name and ext_name != secret_name:
             raise ValueError(err_str.format(secret_name, ext_name))
-        if target and target != secret_name:
+        if target and target != secret_name and secret_type != 'env':
             raise ValueError(err_str.format(target, secret_name))
-        if target:
+        if target and secret_type != 'env':
             log.warning(
                 'WARNING: Service "%s" uses target: "%s" for secret: "%s".'
-                + " That is un-supported and a no-op and is ignored.",
+                + " That is un-supported for non-env secret types and a no-op and is ignored.",
                 cnt["_service"],
                 target,
                 secret_name,
